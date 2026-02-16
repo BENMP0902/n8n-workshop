@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoFlow Solutions — Lead Qualification Pipeline</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface-2: #1a2235;
+    --border: #2a3450;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --blue: #3b82f6;
+    --blue-glow: rgba(59, 130, 246, 0.3);
+    --green: #10b981;
+    --green-glow: rgba(16, 185, 129, 0.25);
+    --red: #ef4444;
+    --red-glow: rgba(239, 68, 68, 0.25);
+    --orange: #f59e0b;
+    --orange-glow: rgba(245, 158, 11, 0.25);
+    --purple: #a78bfa;
+    --purple-glow: rgba(167, 139, 250, 0.25);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.2);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND GRID ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .header-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+  }
+
+  .header h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #3b82f6 50%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header p {
+    font-size: 16px;
+    color: var(--text-dim);
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── PHASE SECTIONS ── */
+  .phases {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .phase {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .phase:hover {
+    border-color: var(--blue);
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .phase-number {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .phase-1 .phase-number { background: var(--blue-glow); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+  .phase-2 .phase-number { background: var(--orange-glow); color: var(--orange); border: 1px solid rgba(245,158,11,0.3); }
+  .phase-3 .phase-number { background: var(--purple-glow); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
+  .phase-4 .phase-number { background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .phase-5 .phase-number { background: var(--cyan-glow); color: var(--cyan); border: 1px solid rgba(34,211,238,0.3); }
+
+  .phase-title-block { flex: 1; }
+  .phase-title { font-size: 18px; font-weight: 600; margin-bottom: 2px; }
+  .phase-subtitle { font-size: 13px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+  .phase-toggle {
+    font-size: 20px;
+    color: var(--text-dim);
+    transition: transform 0.3s;
+  }
+
+  .phase.open .phase-toggle { transform: rotate(180deg); }
+
+  .phase-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .phase.open .phase-body {
+    max-height: 2000px;
+  }
+
+  .phase-content {
+    padding: 24px;
+  }
+
+  /* ── NODE CARDS ── */
+  .node-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .node-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .node-card:hover {
+    border-color: var(--blue);
+    box-shadow: 0 0 20px var(--blue-glow);
+    transform: translateX(4px);
+  }
+
+  .node-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .node-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .node-icon.trigger { background: var(--blue-glow); }
+  .node-icon.action { background: var(--green-glow); }
+  .node-icon.condition { background: var(--orange-glow); }
+  .node-icon.reject { background: var(--red-glow); }
+  .node-icon.enrich { background: var(--purple-glow); }
+  .node-icon.log { background: var(--cyan-glow); }
+
+  .node-name {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .node-type {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: auto;
+  }
+
+  .node-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+
+  .node-io {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .io-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 6px;
+  }
+
+  .io-in { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .io-out { background: rgba(16,185,129,0.15); color: var(--green); }
+  .io-fail { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* ── CONNECTORS ── */
+  .connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+    position: relative;
+  }
+
+  .connector-line {
+    width: 2px;
+    height: 28px;
+    border-radius: 1px;
+  }
+
+  .connector-line.flow { background: linear-gradient(to bottom, var(--blue), var(--green)); }
+  .connector-line.reject { background: linear-gradient(to bottom, var(--orange), var(--red)); }
+  .connector-line.branch { background: linear-gradient(to bottom, var(--orange), var(--purple)); }
+
+  .connector-label {
+    position: absolute;
+    right: calc(50% - 120px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .connector-label.pass { background: rgba(16,185,129,0.15); color: var(--green); }
+  .connector-label.fail { background: rgba(239,68,68,0.15); color: var(--red); }
+  .connector-label.all { background: rgba(34,211,238,0.12); color: var(--cyan); }
+
+  /* ── BRANCH SPLIT ── */
+  .branch-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 4px;
+  }
+
+  .branch-path {
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px dashed;
+  }
+
+  .branch-pass {
+    border-color: rgba(16,185,129,0.3);
+    background: rgba(16,185,129,0.05);
+  }
+
+  .branch-fail {
+    border-color: rgba(239,68,68,0.3);
+    background: rgba(239,68,68,0.05);
+  }
+
+  .branch-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .branch-label.pass { color: var(--green); }
+  .branch-label.fail { color: var(--red); }
+
+  .branch-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── RULES SIDEBAR ── */
+  .rules-list {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .rule-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(167,139,250,0.12);
+    color: var(--purple);
+    border: 1px solid rgba(167,139,250,0.2);
+  }
+
+  /* ── SECURITY FOOTER ── */
+  .security-bar {
+    margin-top: 48px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+
+  .security-bar h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .security-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .sec-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .sec-item h4 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--orange);
+  }
+
+  .sec-item p {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 40px;
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+
+  /* ── KEYWORD HIGHLIGHTS ── */
+  .kw {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+    color: var(--purple);
+    background: rgba(167,139,250,0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .branch-container { grid-template-columns: 1fr; }
+    .security-grid { grid-template-columns: 1fr; }
+    .container { padding: 20px 12px 60px; }
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .phase {
+    animation: fadeSlideUp 0.6s ease-out backwards;
+  }
+  .phase:nth-child(1) { animation-delay: 0.1s; }
+  .phase:nth-child(2) { animation-delay: 0.2s; }
+  .phase:nth-child(3) { animation-delay: 0.3s; }
+  .phase:nth-child(4) { animation-delay: 0.4s; }
+  .phase:nth-child(5) { animation-delay: 0.5s; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge">Hybridge — Sesi&oacute;n 1 Pr&aacute;ctica</div>
+    <h1>Lead Qualification Pipeline</h1>
+    <p>Mapa completo del flujo de calificaci&oacute;n de prospectos para AutoFlow Solutions. Cada fase es un grupo de <span class="kw">nodes</span> con su l&oacute;gica de <span class="kw">branching</span> y reglas de negocio asociadas.</p>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Trigger</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Action Node</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Condition (IF/Switch)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Reject Path</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div> Enrichment</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div> Logging</div>
+  </div>
+
+  <!-- PHASES -->
+  <div class="phases">
+
+    <!-- PHASE 0: TRIGGER -->
+    <div class="phase phase-1 open">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-number">00</div>
+        <div class="phase-title-block">
+          <div class="phase-title"><span class="live-dot"></span>&ensp;Trigger — Ingreso del Lead</div>
+          <div class="phase-subtitle">webhook_trigger → raw JSON payload</div>
+        </div>
+        <div class="phase-toggle">&#9662;</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="node-flow">
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon trigger">&#9889;</div>
+                <div class="node-name">Webhook Trigger</div>
+                <div class="node-type">trigger</div>
+              </div>
+              <div class="node-desc">Recibe HTTP POST desde formularios web en tiempo real (<span class="kw">push-based</span>). Cada formulario del sitio env&iacute;a los datos del prospecto a este endpoint &uacute;nico.</div>
+              <div class="node-io">
+                <span class="io-tag io-in">IN: HTTP POST</span>
+                <span class="io-tag io-out">OUT: { name, email, phone, company }</span>
+              </div>
+            </div>
+          </div>
+          <div class="rules-list">
+            <span class="rule-tag">Regla R-001</span>
+            <span class="rule-tag">webhook signature required</span>
+            <span class="rule-tag">rate limit: 100 req/min</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 1: VALIDATION -->
+    <div class="phase phase-1">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-number">01</div>
+        <div class="phase-title-block">
+          <div class="phase-title">Data Validation — Validaci&oacute;n de datos</div>
+          <div class="phase-subtitle">input_sanitization → format_check → dns_verify</div>
+        </div>
+        <div class="phase-toggle">&#9662;</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="node-flow">
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon action">&#128270;</div>
+                <div class="node-name">Input Sanitizer</div>
+                <div class="node-type">code_node</div>
+              </div>
+              <div class="node-desc">Sanitiza cada campo: strip HTML/JS tags del nombre (<span class="kw">XSS prevention</span>), normaliza tel&eacute;fono a d&iacute;gitos, trim whitespace, valida longitud m&aacute;xima por campo.</div>
+              <div class="node-io">
+                <span class="io-tag io-in">IN: raw JSON</span>
+                <span class="io-tag io-out">OUT: sanitized JSON</span>
+              </div>
+            </div>
+
+            <div class="connector"><div class="connector-line flow"></div></div>
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon condition">&#10067;</div>
+                <div class="node-name">Required Fields Check</div>
+                <div class="node-type">if_node</div>
+              </div>
+              <div class="node-desc">Verifica presencia de los 4 campos obligatorios: <span class="kw">name</span>, <span class="kw">email</span>, <span class="kw">phone</span>, <span class="kw">company</span>.</div>
+              <div class="branch-container">
+                <div class="branch-path branch-pass">
+                  <div class="branch-label pass">&#10003; PASS → siguiente nodo</div>
+                  <div class="branch-text">Los 4 campos est&aacute;n presentes y no vac&iacute;os.</div>
+                </div>
+                <div class="branch-path branch-fail">
+                  <div class="branch-label fail">&#10007; FAIL → reject</div>
+                  <div class="branch-text">Estado: <span class="kw">"incomplete"</span>. Notificar al prospecto que complete datos.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="connector"><div class="connector-line flow"></div><span class="connector-label pass">campos OK</span></div>
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon action">&#128231;</div>
+                <div class="node-name">Email Validation</div>
+                <div class="node-type">code_node + http_request</div>
+              </div>
+              <div class="node-desc">Dos validaciones: (1) <span class="kw">regex</span> para formato v&aacute;lido, (2) <span class="kw">DNS MX record lookup</span> para verificar que el dominio puede recibir correo.</div>
+              <div class="branch-container">
+                <div class="branch-path branch-pass">
+                  <div class="branch-label pass">&#10003; PASS → siguiente nodo</div>
+                  <div class="branch-text">Formato correcto Y dominio con MX records.</div>
+                </div>
+                <div class="branch-path branch-fail">
+                  <div class="branch-label fail">&#10007; FAIL → reject</div>
+                  <div class="branch-text">Estado: <span class="kw">"invalid_email"</span>. Log + descarte.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="connector"><div class="connector-line flow"></div><span class="connector-label pass">email v&aacute;lido</span></div>
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon condition">&#128683;</div>
+                <div class="node-name">Disposable Email Check</div>
+                <div class="node-type">http_request + if_node</div>
+              </div>
+              <div class="node-desc">Consulta contra lista de dominios temporales (<span class="kw">disposable email providers</span>): guerrillamail, tempmail, mailinator, etc.</div>
+              <div class="branch-container">
+                <div class="branch-path branch-pass">
+                  <div class="branch-label pass">&#10003; PASS → Fase 2</div>
+                  <div class="branch-text">Dominio leg&iacute;timo. Lead avanza al chequeo financiero.</div>
+                </div>
+                <div class="branch-path branch-fail">
+                  <div class="branch-label fail">&#10007; FAIL → reject</div>
+                  <div class="branch-text">Estado: <span class="kw">"disposable_email"</span>. Descarte autom&aacute;tico.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="rules-list">
+            <span class="rule-tag">R-001 campos obligatorios</span>
+            <span class="rule-tag">R-002 formato + DNS</span>
+            <span class="rule-tag">R-003 email temporal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 2: FINANCIAL -->
+    <div class="phase phase-2">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-number">02</div>
+        <div class="phase-title-block">
+          <div class="phase-title">Financial Check — Verificaci&oacute;n financiera</div>
+          <div class="phase-subtitle">crm_lookup → debt_evaluation → branch</div>
+        </div>
+        <div class="phase-toggle">&#9662;</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="node-flow">
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon action">&#128179;</div>
+                <div class="node-name">CRM / Billing Lookup</div>
+                <div class="node-type">http_request</div>
+              </div>
+              <div class="node-desc">Consulta al sistema de facturaci&oacute;n usando email + dominio de empresa. Retorna historial de cliente o <span class="kw">"new_customer"</span>.</div>
+              <div class="node-io">
+                <span class="io-tag io-in">IN: email, company_domain</span>
+                <span class="io-tag io-out">OUT: { status, outstanding_amount, days_overdue }</span>
+              </div>
+            </div>
+
+            <div class="connector"><div class="connector-line branch"></div></div>
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon condition">&#9878;</div>
+                <div class="node-name">Debt Evaluation</div>
+                <div class="node-type">switch_node</div>
+              </div>
+              <div class="node-desc">Eval&uacute;a 3 escenarios basados en <span class="kw">days_overdue</span> y <span class="kw">outstanding_amount</span>.</div>
+              <div class="branch-container">
+                <div class="branch-path branch-pass">
+                  <div class="branch-label pass">&#10003; CLEAN / NEW → Fase 3</div>
+                  <div class="branch-text">Sin historial O sin deuda. Contin&uacute;a al enriquecimiento.</div>
+                </div>
+                <div class="branch-path branch-fail">
+                  <div class="branch-label fail">&#10007; DEBT > 30 d&iacute;as → BLOCK</div>
+                  <div class="branch-text">Estado: <span class="kw">"pending_debt"</span>. Notificar cobranza + email al prospecto.</div>
+                </div>
+              </div>
+              <div style="margin-top:10px;">
+                <div class="branch-path" style="border:1px dashed rgba(245,158,11,0.3); background:rgba(245,158,11,0.05); border-radius:10px; padding:14px 16px;">
+                  <div class="branch-label" style="color:var(--orange);">&#9888; WARNING — deuda &lt; 30 d&iacute;as</div>
+                  <div class="branch-text">Contin&uacute;a pero agrega <span class="kw">tag: "recent_debt_warning"</span> para que ventas lo sepa.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="rules-list">
+            <span class="rule-tag">R-004 consulta CRM</span>
+            <span class="rule-tag">R-005 deuda > 30d → block</span>
+            <span class="rule-tag">R-006 deuda < 30d → warning tag</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 3: ENRICHMENT -->
+    <div class="phase phase-3">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-number">03</div>
+        <div class="phase-title-block">
+          <div class="phase-title">Enrichment & Routing — Enriquecimiento y asignaci&oacute;n</div>
+          <div class="phase-subtitle">company_enrich → lead_score → priority_router → assign</div>
+        </div>
+        <div class="phase-toggle">&#9662;</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="node-flow">
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon enrich">&#127793;</div>
+                <div class="node-name">Company Enrichment</div>
+                <div class="node-type">http_request</div>
+              </div>
+              <div class="node-desc">Busca info de la empresa en fuentes p&uacute;blicas: tama&ntilde;o, industria, sitio web. Agrega contexto para el <span class="kw">lead scoring</span>.</div>
+              <div class="node-io">
+                <span class="io-tag io-in">IN: company_name, domain</span>
+                <span class="io-tag io-out">OUT: { size, industry, website, enriched: true }</span>
+              </div>
+            </div>
+
+            <div class="connector"><div class="connector-line flow"></div></div>
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon enrich">&#127919;</div>
+                <div class="node-name">Lead Score Calculator</div>
+                <div class="node-type">code_node</div>
+              </div>
+              <div class="node-desc">Calcula score num&eacute;rico (0-100) basado en: tama&ntilde;o de empresa + industria relevante + fuente de origen + completitud de datos.</div>
+              <div class="node-io">
+                <span class="io-tag io-in">IN: enriched lead</span>
+                <span class="io-tag io-out">OUT: { score: 78, priority: "high" }</span>
+              </div>
+            </div>
+
+            <div class="connector"><div class="connector-line branch"></div></div>
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon condition">&#128256;</div>
+                <div class="node-name">Priority Router</div>
+                <div class="node-type">switch_node</div>
+              </div>
+              <div class="node-desc">Enruta seg&uacute;n <span class="kw">priority</span>: high → asignaci&oacute;n inmediata (SLA 15 min), medium/low → cola est&aacute;ndar <span class="kw">round-robin</span> (SLA 2h).</div>
+              <div class="branch-container">
+                <div class="branch-path branch-pass">
+                  <div class="branch-label pass">&#9733; HIGH PRIORITY</div>
+                  <div class="branch-text">Ejecutivo con menor carga + notificaci&oacute;n instant&aacute;nea Slack. <span class="kw">SLA: 15 min</span>.</div>
+                </div>
+                <div class="branch-path" style="border:1px dashed var(--border); border-radius:10px; padding:14px 16px;">
+                  <div class="branch-label" style="color:var(--text-dim);">MEDIUM / LOW</div>
+                  <div class="branch-text">Cola est&aacute;ndar con asignaci&oacute;n <span class="kw">round-robin</span>. <span class="kw">SLA: 2 horas</span>.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="connector"><div class="connector-line flow"></div></div>
+
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon action">&#128172;</div>
+                <div class="node-name">Notification Dispatcher</div>
+                <div class="node-type">slack_node + email_node</div>
+              </div>
+              <div class="node-desc">Notifica al ejecutivo asignado por Slack y/o email con el resumen completo del lead, su score y el SLA esperado.</div>
+              <div class="node-io">
+                <span class="io-tag io-in">IN: qualified lead + rep</span>
+                <span class="io-tag io-out">OUT: notification_sent: true</span>
+              </div>
+            </div>
+
+          </div>
+          <div class="rules-list">
+            <span class="rule-tag">R-007 enrichment</span>
+            <span class="rule-tag">R-008 high → 15 min SLA</span>
+            <span class="rule-tag">R-009 medium/low → 2h SLA</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 4: LOGGING -->
+    <div class="phase phase-5">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-number">04</div>
+        <div class="phase-title-block">
+          <div class="phase-title">Audit Trail — Registro y trazabilidad</div>
+          <div class="phase-subtitle">ALL paths → audit_logger → persistent_storage</div>
+        </div>
+        <div class="phase-toggle">&#9662;</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="node-flow">
+            <div class="node-card">
+              <div class="node-top">
+                <div class="node-icon log">&#128209;</div>
+                <div class="node-name">Audit Logger</div>
+                <div class="node-type">code_node + db_node</div>
+              </div>
+              <div class="node-desc">Recibe datos de <strong>TODOS</strong> los caminos (pass, reject, block). Registra: timestamp, datos originales, cada validaci&oacute;n con resultado, estado final, ejecutivo asignado (si aplica). Almacena en base de datos o Google Sheet como <span class="kw">audit trail</span>.</div>
+              <div class="node-io">
+                <span class="io-tag io-all" style="background:rgba(34,211,238,0.15); color:var(--cyan);">IN: all pipeline data</span>
+                <span class="io-tag io-out">OUT: log_id, stored: true</span>
+              </div>
+            </div>
+          </div>
+          <div class="rules-list">
+            <span class="rule-tag">R-010 logging obligatorio</span>
+            <span class="rule-tag">NO almacenar passwords/tokens</span>
+            <span class="rule-tag">PII: least privilege access</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECURITY BAR -->
+  <div class="security-bar">
+    <h3>&#128274; Security-First Analysis</h3>
+    <div class="security-grid">
+      <div class="sec-item">
+        <h4>Input Validation</h4>
+        <p>Sanitizar TODOS los campos antes de procesar. Prevenir <span class="kw">XSS</span>, <span class="kw">SQL injection</span> y <span class="kw">buffer overflow</span> limitando longitud.</p>
+      </div>
+      <div class="sec-item">
+        <h4>Rate Limiting</h4>
+        <p>M&aacute;x 100 req/min por IP en el webhook. Sin esto, un atacante puede ejecutar un <span class="kw">DDoS</span> llenando el sistema de leads falsos.</p>
+      </div>
+      <div class="sec-item">
+        <h4>Webhook Authentication</h4>
+        <p>Verificar <span class="kw">HMAC signature</span> o shared secret en headers. Previene <span class="kw">spoofing</span> de leads.</p>
+      </div>
+      <div class="sec-item">
+        <h4>Data Privacy (PII)</h4>
+        <p>Principio de <span class="kw">least privilege</span>: cada nodo accede solo a lo necesario. Credenciales en <span class="kw">credential store</span>, nunca en nodos.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function togglePhase(header) {
+    const phase = header.parentElement;
+    phase.classList.toggle('open');
+  }
+</script>
+
+</body>
+</html>
